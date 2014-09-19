@@ -8,12 +8,12 @@ How to use
 ----------
 
 Download the repository and place the `profile.rb` on the puppet master. Start
-(or restart) your master with the `debug` and `profile` options enabled. You may
-also need to specify a `logdest` for the puppet logs to be output into a file.
-After running your puppet master like this for a few hours run the `profile.rb`
-script and pass in the log file outputted by puppet master as an argument. Follow
-the on screen prompts to generate the .tz file and email this file to
-[britt@puppetlabs.com](mailto:britt@puppetlabs.com).
+(or restart) your master with the `debug` and `profile` options enabled. You
+may also need to specify a `logdest` for the puppet logs to be output into a
+file.  After running your puppet master like this for a few agent check-ins run
+the `profile.rb` script and pass in the log file outputted by puppet master as
+an argument. Follow the on screen prompts to generate the .tz file and email
+this file to [britt@puppetlabs.com](mailto:britt@puppetlabs.com).
 
 About the Information
 ---------------------
@@ -38,11 +38,6 @@ The information collected is listed below.
     - processors
     - puppetversion
     - rubyversion
-    - sp_cpu_type
-    - sp_l2_cache_core
-    - sp_l3_cache
-    - sp_machine_model
-    - sp_machine_name
     - swapfree_mb
     - swapsize_mb
     - virtual

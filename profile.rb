@@ -8,67 +8,10 @@
 # setup of the puppet master in order to find areas where the puppet master is
 # doing more work than it should.
 
-require 'json'
+require 'yaml'
 require 'pp'
 require "zlib"
 require 'open3'
-
-# Helper Functions
-
-def continue_or_exit(msg, default='n', exit_condition='n')
-  puts msg
-  if default.downcase == 'n'
-    print "[y/N]"
-  elsif default.downcase == 'y'
-    print "[Y/n]"
-  else
-    print "[y/n]"
-  end
-  print ": "
-  response = $stdin.gets.chomp
-  if response.length == 0
-    response = default
-  end
-  response == exit_condition.downcase
-end
-
-def gather_facts(wanted_facts, facter_command='facter')
-  facts = {}
-  Open3.popen3(facter_command) {|i, o, e, t|
-    o.each {|fact|
-      fact = fact.split(" => ")
-      if wanted_facts.include? fact[0].strip
-        facts[fact[0]] = fact[1].strip
-      end
-    }
-  }
-
-  facts
-end
-
-def puppet_master_config(config)
-  Open3.popen3("/Users/britt/projects/ruby/puppet/bin/puppet master --configprint #{config}") {|i, o, e, t|
-    o.read.strip
-  }
-end
-
-def get_module_count()
-  module_paths = puppet_master_config("modulepath").split(":")
-  module_count = 0
-  module_paths.each {|module_path|
-    module_count += Dir.glob(File.join(module_path, "**")).count
-  }
-  module_count
-end
-
-def get_cert_count()
-  cert_paths = puppet_master_config("certdir").split(":")
-  cert_count = 0
-  cert_paths.each {|cert_path|
-    cert_count += Dir.glob(File.join(cert_path, "**")).count
-  }
-  cert_count
-end
 
 # Vendored Docopt for Pretty Command Line Parsing
 # -----------------------------------------------
@@ -738,13 +681,66 @@ end
 # End of Vendored docopt
 # -----------------------------------------------
 
+# Helper Functions
+
+def continue_or_exit(msg, default='n', exit_condition='n')
+  puts msg
+  if default.downcase == 'n'
+    print "[y/N]"
+  elsif default.downcase == 'y'
+    print "[Y/n]"
+  else
+    print "[y/n]"
+  end
+  print ": "
+  response = $stdin.gets.chomp
+  if response.length == 0
+    response = default
+  end
+  response == exit_condition.downcase
+end
+
+def gather_facts(wanted_facts, facter_command='facter')
+  facts = {}
+  o = `#{facter_command}`
+  o.each_line {|fact|
+    fact = fact.split(" => ")
+    if wanted_facts.include? fact[0].strip
+      facts[fact[0]] = fact[1].strip
+    end
+  }
+
+  facts
+end
+
+def puppet_master_config(config)
+  o = `puppet master --configprint #{config}`
+  o.strip
+end
+
+def get_module_count()
+  module_paths = puppet_master_config("modulepath").split(":")
+  module_count = 0
+  module_paths.each {|module_path|
+    module_count += Dir.glob(File.join(module_path, "**")).count
+  }
+  module_count
+end
+
+def get_cert_count()
+  cert_paths = puppet_master_config("certdir").split(":")
+  cert_count = 0
+  cert_paths.each {|cert_path|
+    cert_count += Dir.glob(File.join(cert_path, "**")).count
+  }
+  cert_count
+end
+
 # Start of profile gathering script
 def main args
   # Script options
-  pp args
-
   profile_log = File.absolute_path(args['<master_log>'])
-  profile_output_file = args['--output_file'] || "./profile.gz"
+  profile_output_file = args['--output_file'] || "./profile.yml"
   profile_output_file = File.absolute_path(profile_output_file)
 
   puts "This script is used to provide Puppet Labs with information regarding the"
@@ -771,7 +767,7 @@ def main args
   # Gather Profile Data
 
   puts "Gathering Profile Data from '#{profile_log}'"
-  if File.exist?(profile_log) == false
+  if !File.exist?(profile_log)
     abort("File '#{profile_log}' does not exist.")
   end
   lines = []
@@ -799,11 +795,6 @@ def main args
     "processors",
     "puppetversion",
     "rubyversion",
-    "sp_cpu_type",
-    "sp_l2_cache_core",
-    "sp_l3_cache",
-    "sp_machine_model",
-    "sp_machine_name",
     "swapfree_mb",
     "swapsize_mb",
     "virtual",
@@ -839,14 +830,13 @@ def main args
   #  puts "Compiling a catalog"
   #end
 
-  compressed_data = Zlib::Deflate.deflate(JSON.dump(answers))
-  compressed = File.open(profile_output_file, "w")
-  compressed.write(compressed_data)
-  compressed.close()
+  ymlfile = File.open(profile_output_file, "w")
+  ymlfile.write(answers.to_yaml)
+  ymlfile.close()
 
   puts "--------------------------------------------------"
   puts
-  puts "A compressed file with your profile data has been put at #{profile_output_file}."
+  puts "A yaml file with your profile data has been put at #{profile_output_file}."
   puts
   puts "Please email this file to 'britt@puppetlabs.com' along with any additional"
   puts "information you would like to include."
