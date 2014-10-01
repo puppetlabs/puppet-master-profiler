@@ -1,6 +1,8 @@
 Puppet Master Profile Script
 ============================
 
+**Note: The `--profile` flag was added in Puppet 3.2.0. This script will not work in Puppet before 3.2.0**
+
 The puppet master profile script generates a .tz file that includes information
 about how a master is running.
 
