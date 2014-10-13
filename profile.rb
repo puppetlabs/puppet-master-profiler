@@ -10,6 +10,7 @@
 
 require 'yaml'
 require 'pp'
+require 'socket'
 
 # Helper Functions
 
@@ -70,8 +71,12 @@ end
 
 def main profile_log
   # Script options
-  profile_log = File.absolute_path(profile_log)
-  profile_output_file = File.absolute_path("./profile.yml")
+  # absolute_path doesn't work on 1.8.7 :-(
+  # profile_log = File.absolute_path(profile_log)
+  # hostname
+  hostname = Socket.gethostname
+
+  profile_output_file = Dir.pwd + ("/%s.yml" % hostname)
 
   puts "This script is used to provide Puppet Labs with information regarding the"
   puts "setup of the puppet master in order to find areas where we can improve the"
